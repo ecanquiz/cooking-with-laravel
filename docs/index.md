@@ -1,0 +1,26 @@
+---
+# https://vitepress.dev/reference/default-theme-home-page
+layout: home
+
+hero:
+  name: "Cocinando con Laravel"
+  text: "Guía y Recursos"
+  tagline: "Tutorial"
+  image:
+    src: /logo.png
+    alt: VitePress
+  actions:
+    - theme: brand
+      text: Comenzar
+      link: /why-laravel
+    - theme: alt
+      text: ecanquiz
+      link: https://ecanquiz.github.io/
+
+features:  
+  - title: Cocinando con Laravel
+    details: Este tutorial explicará cómo trabajar con la Consola en JavaScript dentro del contexto de un navegador y brindará una descripción general de otras herramientas de desarrollo integradas que puede utilizar como parte de su proceso de desarrollo web.  
+
+footer: MIT Licensed | Copyleft © 2024-present Ernesto Canquiz
+---
+
