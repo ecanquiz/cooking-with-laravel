@@ -1,0 +1,1 @@
+import{_ as a,c as e,o as t,V as o}from"./chunks/framework.BEWajc7s.js";const m=JSON.parse('{"title":"Cocinando con Laravel","description":"","frontmatter":{},"headers":[],"relativePath":"intro.md","filePath":"intro.md"}'),r={name:"intro.md"},n=o("",13),i=[n];function s(l,d,u,c,h,p){return t(),e("div",null,i)}const f=a(r,[["render",s]]);export{m as __pageData,f as default};
