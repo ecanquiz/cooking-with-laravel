@@ -10,15 +10,19 @@ export default defineConfig({
     logo: '/me.jpg',
     nav: [
       { text: 'Inicio', link: '/' },
-      { text: 'Comenzar', link: '/why-laravel' },
+      { text: 'Comenzar', link: '/intro' },
       { text: 'ecanquiz', link: 'https://ecanquiz.github.io/' },     
     ],
     sidebar: [{      
       path: '/',      // optional, link of the title, which should be an absolute path and must exist        
       sidebarDepth: 1,    // optional, defaults to 1
       items: [
+        { text: 'Introducción', link: '/intro' },
         { text: 'La guía definitiva para la validación de Laravel', link: '/laravel-validation' },
-        { text: 'Entorno de Desarrollo', link: 'set-up-laravel-dev-env' },
+        { text: 'Uso de Eloquent Factories con Proveedores de Datos PHPUnit', link: '/eloquent-factories-with-phpunit-data-providers' },
+        { text: 'Afirmando una Estructura de Respuesta JSON en Laravel', link: '/asserting-json-response-structure-in-laravel' },
+        { text: 'Aprenda a dominar los Ámbitos de Consulta en Laravel', link: '/query-scopes' },
+        { text: 'Una guía para los eventos modelo de Laravel', link: '/model-events' },
       ]
     }],
     socialLinks: [
