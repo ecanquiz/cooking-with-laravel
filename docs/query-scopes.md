@@ -122,7 +122,183 @@ $unpublishedPosts = Article::query()
 En mi opinión, me parece que estas consultas son mucho más fáciles de leer y comprender. Esto también significa que, si en el futuro necesitamos escribir consultas con la misma restricción, podemos reutilizar estos ámbitos.
 
 
-## Global Query Scopes
+## Ámbitos de Consulta Global
+
+Los ámbitos de consulta global realizan una función similar a los ámbitos de consulta local. Pero en lugar de aplicarse manualmente consulta por consulta, se aplican automáticamente a todas las consultas del modelo.
+
+Como mencionamos anteriormente, la funcionalidad de _"soft delete"_ incorporada de Laravel hace uso del ámbito de consulta global `Illuminate\Database\Eloquent\SoftDeletingScope`. Este ámbito agrega automáticamente una restricción `whereNull('deleted_at')` a todas las consultas del modelo. Puede consultar el código fuente en [GitHub aquí](https://github.com/laravel/framework/blob/11.x/src/Illuminate/Database/Eloquent/SoftDeletingScope.php) si está interesado en ver cómo funciona en profundidad.
+
+Por ejemplo, imagine que está creando una aplicación de blogs multiusuario que tiene un panel de administración. Solo querría permitir que los usuarios vean los artículos que pertenecen a su equipo. Por lo tanto, podría escribir una consulta como esta:
+
+
+```php
+use App\Models\Article;
+ 
+$articles = Article::query()
+    ->where('team_id', Auth::user()->team_id)
+    ->get();
+```
+
+Esta consulta está bien, pero es fácil olvidarse de agregar la restricción `where`. Si estuviera escribiendo otra consulta y olvidara agregar la restricción, terminaría con un error en su aplicación que permitiría a los usuarios interactuar con artículos que no pertenecen a su equipo. ¡Por supuesto, no queremos que eso suceda!
+
+Para evitar esto, podemos crear un alcance global que podamos aplicar automáticamente a todas nuestras consultas de modelo `App\Model\Article`.
+
+## Cómo Crear Ámbitos de Consulta Global
+
+Creemos un ámbito de consulta global que filtre todas las consultas por la columna `team_id`.
+
+Tenga en cuenta que vamos a simplificar el ejemplo para los fines de este artículo. En una aplicación del mundo real, probablemente desee utilizar un enfoque más sólido que se ocupe de cuestiones como que el usuario no esté autenticado o que el usuario pertenezca a varios equipos. Pero por ahora, simplifiquemos las cosas para poder centrarnos en el concepto de ámbitos de consulta globales.
+
+Comenzaremos ejecutando el siguiente comando de _Artisan_ en nuestra terminal:
+
+
+```sh
+php artisan make:scope TeamScope
+```
+
+Esto debería haber creado un nuevo archivo `app/Models/Scopes/TeamScope.php`. Realizaremos algunas actualizaciones en este archivo y luego veremos el código terminado:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models\Scopes;
+ 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Facades\Auth;
+ 
+final readonly class TeamScope implements Scope
+{
+    /**
+     * Apply the scope to a given Eloquent query builder.
+     */
+    public function apply(Builder $builder, Model $model): void
+    {
+        $builder->where('team_id', Auth::user()->team_id);
+    }
+}
+```
+
+En el ejemplo de código anterior, podemos ver que tenemos una nueva clase que implementa la interfaz `Illuminate\Database\Eloquent\Scope` y tiene un solo método llamado `apply`. Este es el método donde definimos las restricciones que queremos aplicar a las consultas en el modelo.
+
+Nuestro alcance global ahora está listo para usarse. Podemos agregarlo a cualquier modelo en el que queramos limitar el alcance de las consultas hasta el equipo del usuario.
+
+Apliquémoslo al modelo `\App\Models\Article`.
+
+
+## Aplicación de Ámbitos de Consulta Global
+
+Existen varias formas de aplicar un alcance global a un modelo. La primera forma es utilizar el atributo `Illuminate\Database\Eloquent\Attributes\ScopedBy` en el modelo:
 
 
 
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use App\Models\Scopes\TeamScope;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
+use Illuminate\Database\Eloquent\Model;
+ 
+#[ScopedBy(TeamScope::class)]
+final class Article extends Model
+{
+    // ...
+}
+```
+
+
+Otra forma es utilizar el método `addGlobalScope` en el método `booted` del modelo:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use App\Models\Scopes\TeamScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+ 
+final class Article extends Model
+{
+    use HasFactory;
+ 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new TeamScope());
+    }
+ 
+    // ...
+}
+```
+
+
+Ambos enfoques aplicarán la restricción `where('team_id', Auth::user()->team_id)` a todas las consultas en el modelo `\App\Models\Article`.
+
+Esto significa que ahora puedes escribir consultas sin tener que preocuparte por filtrar por la columna `team_id`:
+
+
+```php
+use App\Models\Article;
+ 
+$articles = Article::query()->get();
+```
+
+Si asumimos que el usuario es parte de un equipo con el `team_id` de `1`, se generaría el siguiente SQL para la consulta anterior:
+
+```sql
+select * from `articles` where `team_id` = 1
+```
+
+¡Eso es genial, ¿verdad?!
+
+
+
+## Ámbitos de Consulta Global Anónimos
+
+Otra forma de definir y aplicar un ámbito de consulta global es utilizar un ámbito global anónimo.
+
+Actualicemos nuestro modelo `\App\Models\Article` para utilizar un ámbito global anónimo:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+ 
+final class Article extends Model
+{
+    protected static function booted(): void
+    {
+        static::addGlobalScope('team_scope', static function (Builder $builder): void {
+            $builder->where('team_id', Auth::user()->team_id);
+        });
+    }
+ 
+    // ...
+}
+```
+
+En el ejemplo de código anterior, hemos utilizado el método `addGlobalScope` para definir un ámbito global anónimo en el método `booted` del modelo. El método `addGlobalScope` acepta dos argumentos:
+
+- **El nombre del ámbito** - Se puede utilizar para hacer referencia al ámbito más adelante si necesita ignorarlo en una consulta
+- **Las restricciones del ámbito** -  Un cierre que define las restricciones que se aplicarán a las consultas
+
+
+Al igual que los otros enfoques, este aplicará la restricción `where('team_id', Auth::user()->team_id)` a todas las consultas en el modelo `\App\Models\Article`.
+
+En mi experiencia, los ámbitos globales anónimos son menos comunes que definir un ámbito global en una clase separada. Pero es bueno saber que están disponibles para su uso si los necesita.
+
+
+
+## Ignoring Global Query Scopes
