@@ -1,12 +1,10 @@
 # La guía definitiva para la validación de Laravel
 
-![laravel-validation](./img/laravel-validation.avif)
-
-
 :::info
 La fuente original (en ingles) de este tutorial se encuentra [aquí](https://laravel-news.com/laravel-validation)
 :::
 
+![laravel-validation](./img/laravel-validation.avif)
 
 La validación es una parte importante de cualquier aplicación web. Puede ayudar a prevenir vulnerabilidades de seguridad, corrupción de datos y una gran cantidad de otros problemas que pueden surgir cuando se trabaja con la entrada del usuario.
 

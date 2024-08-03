@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "Cocinando con Laravel"
-  text: "Guía y Recursos"
-  tagline: "Tutorial"
+  text: "Guías y Recursos"
+  tagline: "Tutoriales"
   image:
     src: /logo.png
     alt: VitePress
