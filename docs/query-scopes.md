@@ -301,4 +301,49 @@ En mi experiencia, los ámbitos globales anónimos son menos comunes que definir
 
 
 
-## Ignoring Global Query Scopes
+## Ignorar Ámbitos de Consulta Global
+
+Puede haber ocasiones en las que desee escribir una consulta que no utilice un ámbito de consulta global que se haya aplicado a un modelo. Por ejemplo, puede estar creando un informe o una consulta de análisis que necesite incluir todos los registros, independientemente de los ámbitos de consulta global.
+
+Si este es el caso, puede utilizar uno de los dos métodos para ignorar los ámbitos globales.
+
+El primer método es `withoutGlobalScopes`. Este método le permite ignorar todos los ámbitos globales en el modelo si no se le pasan argumentos:
+
+
+```php
+use App\Models\Article;
+ 
+$articles = Article::query()->withoutGlobalScopes()->get();
+```
+
+O, si prefieres ignorar solo un conjunto determinado de alcances globales, puedes asignar los nombres de alcance al método `withoutGlobalScopes`:
+
+
+```php
+use App\Models\Article;
+use App\Models\Scopes\TeamScope;
+ 
+$articles = Article::query()
+    ->withoutGlobalScopes([
+        TeamScope::class,
+        'another_scope',
+    ])->get();
+```
+
+En el ejemplo anterior, ignoramos `App\Models\Scopes\TeamScope` y otro ámbito global anónimo imaginario llamado `another_scope`.
+
+
+Alternativamente, si prefiere ignorar un único ámbito global, puede utilizar el método `withoutGlobalScope`:
+
+
+
+```php
+use App\Models\Article;
+use App\Models\Scopes\TeamScope;
+ 
+$articles = Article::query()->withoutGlobalScope(TeamScope::class)->get();
+```
+
+
+## Global Query Scope Gotchas
+
