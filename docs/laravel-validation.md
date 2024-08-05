@@ -1,4 +1,4 @@
-# La guía definitiva para la validación de Laravel
+# La Guía Definitiva para la Validación de Laravel
 
 :::info
 La fuente original (en ingles) de este tutorial se encuentra [aquí](https://laravel-news.com/laravel-validation)

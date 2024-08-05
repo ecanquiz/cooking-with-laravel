@@ -18,11 +18,11 @@ export default defineConfig({
       sidebarDepth: 1,    // optional, defaults to 1
       items: [
         { text: 'Introducción', link: '/intro' },
-        { text: 'La guía definitiva para la validación de Laravel', link: '/laravel-validation' },
-        { text: 'Uso de Eloquent Factories con Proveedores de Datos PHPUnit', link: '/eloquent-factories-with-phpunit-data-providers' },
-        { text: 'Afirmando una Estructura de Respuesta JSON en Laravel', link: '/asserting-json-response-structure-in-laravel' },
-        { text: 'Aprenda a dominar los Ámbitos de Consulta en Laravel', link: '/query-scopes' },
-        { text: 'Una guía para los eventos modelo de Laravel', link: '/model-events' },
+        { text: '* La Guía Definitiva para la Validación de Laravel', link: '/laravel-validation' },
+        { text: '* Uso de Eloquent Factories con Proveedores de Datos PHPUnit', link: '/eloquent-factories-with-phpunit-data-providers' },
+        { text: '* Afirmando una Estructura de Respuesta JSON en Laravel', link: '/asserting-json-response-structure-in-laravel' },
+        { text: '* Aprenda a Dominar los Alcances de Consulta en Laravel', link: '/query-scopes' },
+        { text: '* Una Guía para los Eventos Modelo de Laravel', link: '/model-events' },
       ]
     }],
     socialLinks: [
