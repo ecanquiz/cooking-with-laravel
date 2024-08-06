@@ -239,5 +239,132 @@ En el modelo `App\Models\Post` anterior, tenemos:
 Nuestros modelos ahora están preparados, así que creemos nuestras clases de evento `App\Events\AuthorDeleted` y `App\Events\PostSaving`.
 
 
-### Creating the Event Classes
+### Creando las Clases de Eventos
+
+Crearemos una clase de evento `App\Events\PostSaving` que se enviará cuando se guarde una nueva publicación:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Events;
+ 
+use App\Models\Post;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+ 
+final class PostSaving
+{
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+ 
+    public function __construct(public Post $post)
+    {
+        //
+    }
+}
+```
+
+
+En el código anterior, podemos ver la clase de evento `App\Events\PostSaving` que acepta una instancia de modelo `App\Models\Post` en su constructor. Esta clase de evento es un contenedor de datos simple que contiene la instancia de publicación que se está guardando.
+
+De manera similar, podemos crear una clase de evento `App\Events\AuthorDeleted` que se enviará cuando se elimine un autor:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Events;
+ 
+use App\Models\Author;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+ 
+final class AuthorDeleted
+{
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
+ 
+   public function __construct(public Author $author)
+   {
+       //
+   }
+}
+```
+
+
+En la clase `App\Events\AuthorDeleted` anterior, podemos ver que el constructor acepta una instancia de modelo `App\Models\Author`.
+
+Ahora podemos continuar con la creación de nuestros oyentes.
+
+
+### Creando los Oyentes
+
+Primero, creemos un oyente que se pueda usar para calcular el tiempo de lectura estimado de una publicación.
+
+Crearemos una nueva clase de oyente `App\Listeners\CalculateReadTime`:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Listeners;
+ 
+use App\Events\PostSaving;
+use Illuminate\Support\Str;
+ 
+final readonly class CalculateReadTime
+{
+    public function handle(PostSaving $event): void
+    {
+        $event->post->read_time_in_seconds = (int) ceil(
+            (Str::wordCount($event->post->content) / 265) * 60
+        );
+    }
+}
+```
+
+
+Como podemos ver en el código anterior, tenemos un único método `handle`. Este es el método que se llamará automáticamente cuando se envíe el evento `App\Events\PostSaving`. Acepta una instancia de la clase de evento `App\Events\PostSaving` que contiene la publicación que se está guardando.
+
+En el método `handle`, estamos usando una fórmula ingenua para calcular el tiempo de lectura de la publicación. En este caso, estamos asumiendo que la velocidad de lectura promedio es de 265 palabras por minuto. Estamos calculando el tiempo de lectura en segundos y luego configurando el atributo `read_time_in_seconds` en el modelo de publicación.
+
+Dado que este detector se llamará cuando se dispare el evento del modelo `saving`, esto significa que el atributo `read_time_in_seconds` se calculará cada vez que se cree o actualice una publicación antes de que se guarde en la base de datos.
+
+También podemos crear un detector que elimine de forma suave todas las publicaciones relacionadas cuando se elimine de forma suave a un autor.
+
+Podemos crear una nueva clase de oyente `App\Listeners\SoftDeleteAuthorRelationships`:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Listeners;
+ 
+use App\Events\AuthorDeleted;
+ 
+final readonly class SoftDeleteAuthorRelationships
+{
+    public function handle(AuthorDeleted $event): void
+    {
+        $event->author->posts()->delete();
+ 
+        // Soft delete any other relationships here...
+    }
+}
+```
+
+
+En el detector anterior, el método `handle` acepta una instancia de la clase de evento `App\Events\AuthorDeleted`. Esta clase de evento contiene el autor que se está eliminando. Luego, eliminamos las publicaciones del autor mediante el método `delete` en la relación `posts`.
+
+Como resultado, siempre que se elimine suavemente un modelo `App\Models\Author`, también se eliminarán suavemente todas las publicaciones del autor.
+
+Como nota al margen, vale la pena señalar que probablemente desee utilizar una solución más sólida y reutilizable para lograr esto. Pero para los fines de este artículo, lo mantendremos simple.
+
+## Listening to Model Events Using Closures
 
