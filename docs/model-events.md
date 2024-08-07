@@ -366,5 +366,161 @@ Como resultado, siempre que se elimine suavemente un modelo `App\Models\Author`,
 
 Como nota al margen, vale la pena señalar que probablemente desee utilizar una solución más sólida y reutilizable para lograr esto. Pero para los fines de este artículo, lo mantendremos simple.
 
-## Listening to Model Events Using Closures
+## Escuchar Eventos de Modelos Usando Clausura
 
+Otro enfoque que puede utilizar es definir sus oyentes como clausuras en el propio modelo.
+
+Tomemos nuestro ejemplo anterior de eliminación suave de publicaciones cuando se elimina suavemente a un autor. Podemos actualizar nuestro modelo `App\Models\Author` para incluir una clausura que escuche el evento de modelo `deleted`:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+ 
+final class Author extends Model
+{
+    use HasFactory;
+    use SoftDeletes;
+ 
+    protected static function booted(): void
+    {
+        self::deleted(static function (Author $author): void {
+            $author->posts()->delete();
+        });
+    }
+ 
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+}
+```
+
+
+Podemos ver en el modelo anterior que estamos definiendo nuestro oyente dentro del método `booted` del modelo. Queremos escuchar el evento del modelo `deleted`, por lo que hemos utilizado `self::deleted`. De manera similar, si quisiéramos crear un oyente para el evento del modelo `created`, podríamos utilizar `self::created`, y así sucesivamente. El método `self::deleted` acepta una clausura que recibe el `App\Models\Author` que se está eliminando. Esta clausura se ejecutará cuando se elimine el modelo, por lo que se eliminarán todas las publicaciones del autor.
+
+Me gusta bastante este enfoque para oyentes muy simples. Mantiene la lógica dentro de la clase del modelo para que los desarrolladores puedan verla más fácilmente. A veces, extraer la lógica en una clase de oyente independiente puede hacer que el código sea más difícil de seguir y rastrear, lo que puede dificultar el seguimiento del flujo de la lógica, especialmente si no está familiarizado con la base de código. Sin embargo, si el código dentro de estas clausuras se vuelve más complejo, puede que valga la pena extraer la lógica en una clase de oyente independiente.
+
+Un consejo útil que conviene saber es que también se puede utilizar la función `Illuminate\Events\queueable` para que la clausura se pueda poner en cola. Esto significa que el código del oyente se colocará en la cola para ejecutarse en segundo plano en lugar de en el mismo ciclo de vida de la solicitud. Podemos actualizar nuestro oyente para que se pueda poner en cola de la siguiente manera:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use Illuminate\Database\Eloquent\Model;
+use function Illuminate\Events\queueable;
+ 
+final class Author extends Model
+{
+    // ...
+ 
+    protected static function booted(): void
+    {
+        self::deleted(queueable(static function (Author $author): void {
+            $author->posts()->delete();
+        }));
+    }
+ 
+    // ...
+}
+```
+
+
+Como podemos ver en nuestro ejemplo anterior, hemos envuelto nuestra clausura en la función `Illuminate\Events\queueable`.
+
+
+## Escuchar Eventos de Modelo Usando Observadores
+
+Otro enfoque que puede adoptar para escuchar eventos de modelo es utilizar observadores de modelo. Los observadores de modelo le permiten definir todos los oyentes de un modelo en una sola clase.
+
+Normalmente, son clases que existen en el directorio `app/Observers` y tienen métodos que corresponden a los eventos de modelo que desea escuchar. Por ejemplo, si desea escuchar el evento de modelo `deleted`, definiría un método `deleted` en su clase de observador. Si desea escuchar el evento de modelo `created`, definiría un método `created` en su clase de observador, y así sucesivamente.
+
+Echemos un vistazo a cómo podríamos crear un observador de modelo para nuestro modelo `App\Models\Author` que escuche el evento de modelo `deleted`:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Observers;
+ 
+use App\Models\Author;
+ 
+final readonly class AuthorObserver
+{
+    public function deleted(Author $author): void
+    {
+        $author->posts()->delete();
+    }
+}
+```
+
+
+
+Como podemos ver en el código anterior, hemos creado un observador que tiene un método `deleted`. Este método acepta la instancia del modelo `App\Models\Author` que se está eliminando. Luego, eliminamos las publicaciones del autor mediante el método `delete` en la relación `posts`.
+
+Digamos, como ejemplo, que también queremos definir oyentes para los eventos de modelo `created` y `updated`. Podríamos actualizar nuestro observador de la siguiente manera:
+
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Observers;
+ 
+use App\Models\Author;
+ 
+final readonly class AuthorObserver
+{
+    public function created(Author $author): void
+    {
+        // Logic to run when the author is created...
+    }
+ 
+    public function updated(Author $author): void
+    {
+        // Logic to run when the author is updated...
+    }
+ 
+    public function deleted(Author $author): void
+    {
+        $author->posts()->delete();
+    }
+}
+```
+
+
+Para que se ejecuten los métodos `App\Observers\AuthorObserver`, necesitamos indicarle a Laravel que los use. Para ello, podemos hacer uso del atributo `#[Illuminate\Database\Eloquent\Attributes\ObservedBy]`. Esto nos permite asociar el observador con el modelo, de forma similar a cómo registraríamos los alcances de consulta globales utilizando el atributo `#[ScopedBy]` (como se muestra en [Aprenda a Dominar los Alcances de Consulta en Laravel](./query-scopes.html)). Podemos actualizar nuestro modelo `App\Models\Author` para utilizar el observador de la siguiente manera:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Models;
+ 
+use App\Observers\AuthorObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Model;
+ 
+#[ObservedBy(AuthorObserver::class)]
+final class Author extends Model
+{
+    // ...
+}
+```
+
+
+Me gusta mucho esta forma de definir la lógica del oyente porque resulta inmediatamente obvio al abrir una clase de modelo que tiene un observador registrado. Por lo tanto, aunque la lógica sigue estando "oculta" en un archivo separado, podemos saber que tenemos oyentes para al menos uno de los eventos del modelo.
+
+
+
+## Testing Your Model Events
