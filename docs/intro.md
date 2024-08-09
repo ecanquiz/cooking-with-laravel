@@ -5,8 +5,7 @@
 
 JavaScript es un lenguaje de secuencias de comandos dinámico, basado en objetos y de alto nivel, popular como herramienta para hacer que las páginas web sean interactivas.
 
-
-## [La guía definitiva para la validación de Laravel](./laravel-validation.html)
+## [La Guía Definitiva para la Validación de Laravel](./laravel-validation.html)
 
 La validación es una parte importante de cualquier aplicación web. Puede ayudar a prevenir vulnerabilidades de seguridad, corrupción de datos y una gran cantidad de otros problemas que pueden surgir cuando se trabaja con la entrada del usuario.
 
@@ -18,12 +17,11 @@ There are a few ways to work with Laravel's factories in feature tests, such as 
 
 When writing tests for API responses in Laravel, it can be useful to validate the structure of the response. Laravel has the fluent assertJson() method, which you can use to verify JSON values in a given test response.
 
-## [Aprenda a dominar los Ámbitos de Consulta en Laravel](./query-scopes)
+## [Aprenda a Dominar los Alcances de Consulta en Laravel](./query-scopes)
 
-When building your Laravel applications, you'll likely have to write queries that have constraints which are used in multiple places throughout your application. Maybe you're building a multi-tenant application and you're having to keep adding a where constraint to your queries to filter by the user's team. Or, maybe you're building a blog and you're having to keep adding a where constraint to your queries to filter by whether the blog post is published or not.
+Al crear aplicaciones Laravel, es probable que deba escribir consultas que tengan restricciones que se utilicen en varios lugares de la aplicación. En Laravel, podemos utilizar alcances de consulta para ayudarnos a mantener estas restricciones ordenadas y reutilizables en un solo lugar.
 
-## [Una guía para los eventos modelo de Laravel](./model-events)
+## [Una Guía para los Eventos Modelo de Laravel](./model-events)
 
-Model events are a really handy feature in Laravel that can help you to automatically run logic when certain actions are performed on your Eloquent models. But they can sometimes lead to weird side effects if they're not used correctly.
-
+Los eventos de modelo son una característica muy útil en Laravel que puede ayudarte a ejecutar lógica automáticamente cuando se realizan ciertas acciones en tus modelos Eloquent. Pero a veces pueden provocar efectos secundarios extraños si no se usan correctamente.
 
