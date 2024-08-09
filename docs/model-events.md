@@ -53,7 +53,7 @@ final class UserRegistered
 
 En el ejemplo básico anterior, tenemos una clase de evento `App\Events\UserRegistered` que acepta una instancia del modelo `User` en su constructor. Esta clase de evento es un contenedor de datos simple que contiene la instancia del usuario que se registró.
 
-Cuando se despacha, el evento disparará cualquier detector que lo esté escuchando.
+Cuando se despacha, el evento disparará cualquier detector que lo esté detectando.
 
 A continuación, se muestra un ejemplo simple de cómo se puede endespachar ese evento cuando un usuario se registra:
 
@@ -72,7 +72,7 @@ UserRegistered::dispatch($user);
 ```
 
 
-En el ejemplo anterior, creamos un nuevo usuario y luego despachamos el evento `App\Events\UserRegistered` con la instancia del usuario. Suponiendo que los detectores estén registrados correctamente, esto disparará cualquier detector que esté escuchando el evento `App\Events\UserRegistered`.
+En el ejemplo anterior, creamos un nuevo usuario y luego despachamos el evento `App\Events\UserRegistered` con la instancia del usuario. Suponiendo que los detectores estén registrados correctamente, esto disparará cualquier detector que esté detectando el evento `App\Events\UserRegistered`.
 
 
 
@@ -80,7 +80,7 @@ En el ejemplo anterior, creamos un nuevo usuario y luego despachamos el evento `
 
 Los detectores son bloques de código que quieres ejecutar cuando ocurre un evento específico.
 
-Por ejemplo, siguiendo con nuestro ejemplo de registro de usuario, es posible que quieras enviar un correo electrónico de bienvenida al usuario cuando se registre. Podrías crear un detector que escuche el evento `App\Events\UserRegistered` y envíe el correo electrónico de bienvenida.
+Por ejemplo, siguiendo con nuestro ejemplo de registro de usuario, es posible que quieras enviar un correo electrónico de bienvenida al usuario cuando se registre. Podrías crear un detector que detecte el evento `App\Events\UserRegistered` y envíe el correo electrónico de bienvenida.
 
 En Laravel, los detectores son típicamente (pero no siempre, lo cubriremos más adelante) clases que se encuentran en el directorio `app/Listeners`.
 
@@ -148,9 +148,9 @@ En la lista anterior, puede observar que algunos nombres de eventos son similare
 Echemos un vistazo a cómo podemos utilizar estos eventos de modelo en nuestras aplicaciones Laravel.
 
 
-## Escuchar Eventos de Modelo Usando `dispatchesEvents`
+## Detectar Eventos de Modelo Usando `dispatchesEvents`
 
-Una forma de escuchar eventos de modelo es definir una propiedad `dispatchesEvents` en su modelo.
+Una forma de detectar eventos de modelo es definir una propiedad `dispatchesEvents` en su modelo.
 
 Esta propiedad le permite mapear eventos de modelo de Eloquent a las clases de eventos que se deben despachar cuando ocurre el evento. Esto significa que puede definir sus detectores como lo haría con cualquier otro evento.
 
@@ -366,11 +366,11 @@ Como resultado, siempre que se elimine suavemente un modelo `App\Models\Author`,
 
 Como nota al margen, vale la pena señalar que probablemente desee utilizar una solución más sólida y reutilizable para lograr esto. Pero para los fines de este artículo, lo mantendremos simple.
 
-## Escuchar Eventos de Modelos Usando Clausura
+## Detectar Eventos de Modelos Usando Clausura
 
 Otro enfoque que puede utilizar es definir sus detectores como clausuras en el propio modelo.
 
-Tomemos nuestro ejemplo anterior de eliminación suave de publicaciones cuando se elimina suavemente a un autor. Podemos actualizar nuestro modelo `App\Models\Author` para incluir una clausura que escuche el evento de modelo `deleted`:
+Tomemos nuestro ejemplo anterior de eliminación suave de publicaciones cuando se elimina suavemente a un autor. Podemos actualizar nuestro modelo `App\Models\Author` para incluir una clausura que detecte el evento de modelo `deleted`:
 
 
 
@@ -404,7 +404,7 @@ final class Author extends Model
 ```
 
 
-Podemos ver en el modelo anterior que estamos definiendo nuestro detector dentro del método `booted` del modelo. Queremos escuchar el evento del modelo `deleted`, por lo que hemos utilizado `self::deleted`. De manera similar, si quisiéramos crear un detector para el evento del modelo `created`, podríamos utilizar `self::created`, y así sucesivamente. El método `self::deleted` acepta una clausura que recibe el `App\Models\Author` que se está eliminando. Esta clausura se ejecutará cuando se elimine el modelo, por lo que se eliminarán todas las publicaciones del autor.
+Podemos ver en el modelo anterior que estamos definiendo nuestro detector dentro del método `booted` del modelo. Queremos detectar el evento del modelo `deleted`, por lo que hemos utilizado `self::deleted`. De manera similar, si quisiéramos crear un detector para el evento del modelo `created`, podríamos utilizar `self::created`, y así sucesivamente. El método `self::deleted` acepta una clausura que recibe el `App\Models\Author` que se está eliminando. Esta clausura se ejecutará cuando se elimine el modelo, por lo que se eliminarán todas las publicaciones del autor.
 
 Me gusta bastante este enfoque para detectores muy simples. Mantiene la lógica dentro de la clase del modelo para que los desarrolladores puedan verla más fácilmente. A veces, extraer la lógica en una clase detectora independiente puede hacer que el código sea más difícil de seguir y rastrear, lo que puede dificultar el seguimiento del flujo de la lógica, especialmente si no está familiarizado con la base de código. Sin embargo, si el código dentro de estas clausuras se vuelve más complejo, puede que valga la pena extraer la lógica en una clase detectora independiente.
 
@@ -438,13 +438,13 @@ final class Author extends Model
 Como podemos ver en nuestro ejemplo anterior, hemos envuelto nuestra clausura en la función `Illuminate\Events\queueable`.
 
 
-## Escuchar Eventos de Modelo Usando Observadores
+## Detectar Eventos de Modelo Usando Observadores
 
-Otro enfoque que puede adoptar para escuchar eventos de modelo es utilizar observadores de modelo. Los observadores de modelo le permiten definir todos los detectores de un modelo en una sola clase.
+Otro enfoque que puede adoptar para detectar eventos de modelo es utilizar observadores de modelo. Los observadores de modelo le permiten definir todos los detectores de un modelo en una sola clase.
 
-Normalmente, son clases que existen en el directorio `app/Observers` y tienen métodos que corresponden a los eventos de modelo que desea escuchar. Por ejemplo, si desea escuchar el evento de modelo `deleted`, definiría un método `deleted` en su clase de observador. Si desea escuchar el evento de modelo `created`, definiría un método `created` en su clase de observador, y así sucesivamente.
+Normalmente, son clases que existen en el directorio `app/Observers` y tienen métodos que corresponden a los eventos de modelo que desea detectar. Por ejemplo, si desea detectar el evento de modelo `deleted`, definiría un método `deleted` en su clase de observador. Si desea detectar el evento de modelo `created`, definiría un método `created` en su clase de observador, y así sucesivamente.
 
-Echemos un vistazo a cómo podríamos crear un observador de modelo para nuestro modelo `App\Models\Author` que escuche el evento de modelo `deleted`:
+Echemos un vistazo a cómo podríamos crear un observador de modelo para nuestro modelo `App\Models\Author` que detecte el evento de modelo `deleted`:
 
 
 
