@@ -10,14 +10,14 @@ export default defineConfig({
     logo: '/me.jpg',
     nav: [
       { text: 'Inicio', link: '/' },
-      { text: 'Comenzar', link: '/intro' },
+      { text: 'Comenzar', link: '/getstart' },
       { text: 'ecanquiz', link: 'https://ecanquiz.github.io/' },     
     ],
     sidebar: [{      
       path: '/',      // optional, link of the title, which should be an absolute path and must exist        
       sidebarDepth: 1,    // optional, defaults to 1
       items: [
-        { text: 'Introducción', link: '/intro' },
+        { text: '* Comenzar', link: '/getstart' },
         { text: '* La Guía Definitiva para la Validación de Laravel', link: '/laravel-validation' },
         { text: '* Uso de Eloquent Factories con Proveedores de Datos PHPUnit', link: '/eloquent-factories-with-phpunit-data-providers' },
         { text: '* Afirmando una Estructura de Respuesta JSON en Laravel', link: '/asserting-json-response-structure-in-laravel' },
