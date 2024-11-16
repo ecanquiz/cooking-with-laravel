@@ -18,6 +18,7 @@ export default defineConfig({
       sidebarDepth: 1,    // optional, defaults to 1
       items: [
         { text: '* Comenzar', link: '/getstart' },
+        { text: '* Una Guía para la Paginación en Laravel', link: '/pagination-in-laravel' },
         { text: '* La Guía Definitiva para la Validación de Laravel', link: '/laravel-validation' },
         { text: '* Uso de Eloquent Factories con Proveedores de Datos PHPUnit', link: '/eloquent-factories-with-phpunit-data-providers' },
         { text: '* Afirmando una Estructura de Respuesta JSON en Laravel', link: '/asserting-json-response-structure-in-laravel' },

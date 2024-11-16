@@ -17,9 +17,11 @@ hero:
       text: ecanquiz
       link: https://ecanquiz.github.io/
 
-features:  
+features:
   - title: Cocinando con Laravel
     details: Laravel es un framework de código abierto para desarrollar aplicaciones y servicios web con PHP. Su filosofía es desarrollar código PHP de forma elegante y simple, evitando el "código espagueti". En este lugar encotrara guías, recursos y tutoriales relacionados con Laravel.
+  - title: Una Guía para la Paginación en Laravel
+    details: La paginación es una característica común en las aplicaciones  web. Casi todas las aplicaciones de Laravel en las que he trabajado han tenido algún tipo de paginación implementada.
   - title: La Guía Definitiva para la Validación de Laravel
     details: La validación es una parte importante de cualquier aplicación web. Puede ayudar a prevenir vulnerabilidades de seguridad, corrupción de datos y una gran cantidad de otros problemas que pueden surgir cuando se trabaja con la entrada del usuario.
   - title: Uso de Eloquent Factories con Proveedores de Datos PHPUnit
