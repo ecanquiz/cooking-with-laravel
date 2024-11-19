@@ -55,5 +55,177 @@ El método `paginate` puede determinar automáticamente el número de `página` 
 
 De manera predeterminada, todos los métodos de paginación de Laravel obtienen 15 registros a la vez. Sin embargo, esto se puede cambiar a un valor diferente (veremos cómo hacerlo más adelante).
 
-## Using paginate with Blade Views
+## Uso de `paginate` con Blade Views
 
+Veamos cómo utilizar el método `paginate` al representar datos en una vista de Blade.
+
+Imaginemos que tenemos una ruta simple que obtiene los usuarios de la base de datos en un formato paginado y los pasa a una vista:
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    $users = User::query()->paginate();
+ 
+    return view('users.index', [
+        'users' => $users,
+    ]);
+});
+```
+
+Nuestro archivo `resources/views/users/index.blade.php` podría verse así:
+
+
+```html
+<html>
+<head>
+    <title>Paginate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+ 
+<body>
+    <div class="max-w-5xl mx-auto py-8">
+        <h1 class="text-5xl">Paginate</h1>
+ 
+        <ul class="py-4">
+            @foreach ($users as $user)
+                <li class="py-1 border-b">{{ $user->name }}</li>
+            @endforeach
+        </ul>
+ 
+        {{ $users->links() }}
+    </div>
+</body>
+</html>
+```
+
+La página resultante se vería así:
+
+![laravel-pagination-1](./img/laravel-pagination-1.avif)
+
+Analicemos lo que sucede en la vista Blade:
+
+- Estamos recorriendo cada usuario que está presente en el campo `$users` (el objeto `Illuminate\Pagination\LengthAwarePaginator`) y mostrando su nombre.
+- Estamos llamando al método `links` en el objeto `$users`. Este es un método muy útil que devuelve algo de HTML que muestra los enlaces de paginación (por ejemplo, _"Previous"_, _"Next"_ y los números de página). Esto significa que no tiene que preocuparse por crear los enlaces de paginación usted mismo, y Laravel se encargará de todo eso por usted.
+
+También podemos ver que el método `paginate` nos brinda una descripción general de los datos de paginación. Podemos ver que estamos viendo los registros del 16 al 30, de un total de 50 registros. También podemos ver que estamos en la segunda página y que hay un total de 4 páginas.
+
+Es importante tener en cuenta que el método `links` devolverá el HTML con estilo usando Tailwind CSS. Si desea utilizar algo distinto de Tailwind o desea darle estilo a los enlaces de paginación usted mismo, puede consultar la documentación sobre cómo [personalizar las vistas de paginación](https://laravel.com/docs/11.x/pagination#customizing-the-pagination-view).
+
+
+## Uso de `paginate` en Puntos Finales de API
+
+Además de utilizar el método `paginate` en las vistas de Blade, también puedes usarlo en los puntos finales de la API. Laravel facilita este proceso al convertir automáticamente los datos paginados en JSON.
+
+Por ejemplo, podríamos construir un punto final `/api/users` (agregando la siguiente ruta a nuestro archivo `routes/api.php`) que devuelva los usuarios paginados en formato JSON:
+
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('paginate', function () {
+    return User::query()->paginate();
+});
+```
+
+Acceder al punto final `/api/users` devolvería una respuesta JSON similar a la siguiente (tenga en cuenta que he limitado el campo `data` a solo 3 registros por razones de brevedad):
+
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 1,
+      "name": "Andy Runolfsson",
+      "email": "teresa.wiegand@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 2,
+      "name": "Rafael Cummings",
+      "email": "odessa54@example.org",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 3,
+      "name": "Reynold Lindgren",
+      "email": "juwan.johns@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    }
+  ],
+  "first_page_url": "http://example.com/users?page=1",
+  "from": 1,
+  "last_page": 4,
+  "last_page_url": "http://example.com/users?page=4",
+  "links": [
+    {
+      "url": null,
+      "label": "&laquo; Previous",
+      "active": false
+    },
+    {
+      "url": "http://example.com/users?page=1",
+      "label": "1",
+      "active": true
+    },
+    {
+      "url": "http://example.com/users?page=2",
+      "label": "2",
+      "active": false
+    },
+    {
+      "url": "http://example.com/users?page=3",
+      "label": "3",
+      "active": false
+    },
+    {
+      "url": "http://example.com/users?page=4",
+      "label": "4",
+      "active": false
+    },
+    {
+      "url": "http://example.com/users?page=5",
+      "label": "5",
+      "active": false
+    },
+    {
+      "url": "http://example.com/users?page=2",
+      "label": "Next &raquo;",
+      "active": false
+    }
+  ],
+  "next_page_url": "http://example.com/users?page=2",
+  "path": "http://example.com/users",
+  "per_page": 15,
+  "prev_page_url": null,
+  "to": 15,
+  "total": 50
+}
+```
+
+Analicemos la respuesta JSON:
+
+- `current_page` - La página actual en la que nos encontramos. En este caso, estamos en la primera página.
+- `data` - Los datos reales que se están devolviendo. En este caso, contienen los primeros 15 usuarios (abreviados a 3 para abreviar).
+- `first_page_url` - La URL a la primera página de datos.
+- `from` - El número de registro inicial de los datos que se están devolviendo. En este caso, es el primer registro. Si estuviéramos en la segunda página, sería 16.
+- `last_page` - El número total de páginas de datos. En este caso, hay 4 páginas.
+- `last_page_url` - La URL a la última página de datos.
+- `links` - Una matriz de enlaces a las diferentes páginas de datos. Esto incluye los enlaces _"Previous"_ y _"Next"_, así como los números de página.
+- `next_page_url` - La URL a la siguiente página de datos.
+- `path` - La URL base del punto final.
+- `per_page` - La cantidad de registros que se devuelven por página. En este caso, son 15.
+- `prev_page_url` - La URL de la página de datos anterior. En este caso, es nula porque estamos en la primera página. Si estuviéramos en la segunda página, esta sería la URL de la primera página.
+- `to` - El número de registro final de los datos que se devuelven. En este caso, es el registro número 15. Si estuviéramos en la segunda página, sería 30.
+- `total` - La cantidad total de registros en el conjunto de datos. En este caso, hay 50 registros.
+
+
+## The Underlying SQL Queries
