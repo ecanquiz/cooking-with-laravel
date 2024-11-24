@@ -228,4 +228,51 @@ Analicemos la respuesta JSON:
 - `total` - La cantidad total de registros en el conjunto de datos. En este caso, hay 50 registros.
 
 
-## The Underlying SQL Queries
+## Las Consultas SQL Subyacentes
+
+El uso del método `paginate` en Laravel da como resultado la ejecución de dos consultas SQL:
+
+- La primera consulta recupera la cantidad total de registros en el conjunto de datos. Esto se utiliza para determinar información como la cantidad total de páginas y la cantidad total de registros.
+- La segunda consulta recupera el subconjunto de datos en función de los valores de desplazamiento y límite. Por ejemplo, podría estar recuperando los usuarios para que los procesemos y los devolvamos.
+
+Por lo tanto, si quisiéramos recuperar la primera página de usuarios (con 15 usuarios por página), se ejecutarían las siguientes consultas SQL:
+
+```sql
+select count(*) as aggregate from `users`
+```
+
+y
+
+```sql
+select * from `users` limit 15 offset 0
+```
+
+En la segunda consulta, podemos ver que el valor `limit` está establecido en 15. Esta es la cantidad de registros que se devuelven por página.
+
+El valor de `offset` se calcula de la siguiente manera:
+
+```
+Offset = Page size * (Page - 1)
+```
+
+Entonces, si quisiéramos obtener la tercera página de usuarios, el valor `offset` se calcularía como:
+
+```
+Offset = 15 * (3 - 1)
+```
+
+Por lo tanto, el valor de `offset` sería 30 y buscaríamos los registros del 31 al 45. Las consultas para la tercera página se verían así:
+
+```sql
+select count(*) as aggregate from `users`
+```
+
+y
+
+```sql
+select * from `users` limit 15 offset 30
+```
+
+## Using the simplePaginate Method
+
+
