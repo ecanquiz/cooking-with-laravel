@@ -273,6 +273,166 @@ y
 select * from `users` limit 15 offset 30
 ```
 
-## Using the simplePaginate Method
+## Utilizando el método `simplePaginate`
+
+El método `simplePaginate` es muy similar al método `paginate` pero con una diferencia clave. El método `simplePaginate` no recupera la cantidad total de registros en el conjunto de datos.
+
+Como acabamos de ver, cuando utilizamos el método `paginate`, también obtenemos información sobre la cantidad total de registros y páginas disponibles en el conjunto de datos. Luego, podemos utilizar esta información para mostrar elementos como la cantidad total de páginas en la respuesta de la interfaz de usuario o de la API.
+
+Pero si no tiene intención de mostrar estos detalles al usuario (o al desarrollador que consume la API), podemos evitar una consulta de base de datos innecesaria (que cuenta la cantidad total de registros) utilizando el método `simplePaginate`.
+
+El método `simplePaginate` se puede utilizar de la misma manera que el método `paginate`:
+
+```php
+use App\Models\User;
+ 
+$users = User::query()->simplePaginate();
+```
+
+Al ejecutar el código anterior, `$users` sería una instancia de `Illuminate\Contracts\Pagination\Paginator`, normalmente un objeto `Illuminate\Pagination\Paginator`.
+
+A diferencia del objeto `Illuminate\Pagination\LengthAwarePaginator` devuelto por el método `paginate`, el objeto `Illuminate\Pagination\Paginator` no contiene información sobre la cantidad total de registros en el conjunto de datos y no tiene idea de cuántas páginas o registros totales hay. Solo sabe sobre la página actual de datos y si hay más registros para recuperar.
+
+## Uso de `simplePaginate` con vistas Blade
+
+Veamos cómo se puede utilizar el método `simplePaginate` con una vista Blade. Supondremos que tenemos la misma ruta que antes, pero esta vez utilizaremos el método `simplePaginate`:
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    $users = User::query()->simplePaginate();
+ 
+    return view('users.index', [
+        'users' => $users,
+    ]);
+});
+```
+
+Construiremos nuestra vista Blade de la misma manera que antes:
+
+```html
+<html>
+<head>
+    <title>Simple Paginate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+ 
+<body>
+    <div class="max-w-5xl mx-auto py-8">
+        <h1 class="text-5xl">Simple Paginate</h1>
+ 
+        <ul class="py-4">
+            @foreach ($users as $user)
+                <li class="py-1 border-b">{{ $user->name }}</li>
+            @endforeach
+        </ul>
+ 
+        {{ $users->links() }}
+    </div>
+</body>
+</html>
+```
+
+La página resultante se vería así:
+
+![laravel-pagination-1](./img/laravel-pagination-2.avif)
+
+Como podemos ver en este ejemplo, la salida de `$users->links()` es diferente a la salida que vimos al usar el método `paginate`. Dado que el método `simplePaginate` no obtiene el número total de registros, no tiene contexto del número total de páginas o registros, solo si hay una página siguiente o no. Por lo tanto, solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
+
+## Uso de `simplePaginate` en puntos finales de API
+
+También puedes usar el método `simplePaginate` en los puntos finales de la API. Laravel convertirá automáticamente los datos paginados en JSON.
+
+Construyamos un punto final `/api/users` que devuelva los usuarios paginados en formato JSON:
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    return User::query()->simplePaginate();
+});
+```
+
+Cuando llegamos a esta ruta, obtendremos una respuesta JSON similar a la siguiente (he limitado el campo `data` a solo 3 registros para abreviar):
+
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 1,
+      "name": "Andy Runolfsson",
+      "email": "teresa.wiegand@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 2,
+      "name": "Rafael Cummings",
+      "email": "odessa54@example.org",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 3,
+      "name": "Reynold Lindgren",
+      "email": "juwan.johns@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    }
+  ],
+  "first_page_url": "http://example.com/users?page=1",
+  "from": 1,
+  "next_page_url": "http://example.com/users?page=2",
+  "path": "http://example.com/users",
+  "per_page": 15,
+  "prev_page_url": null,
+  "to": 15
+}
+```
+
+Como podemos ver, la respuesta JSON es muy similar a la que obtuvimos al usar el método `paginate`. La diferencia clave es que no tenemos los campos `last_page`, `last_page_url`, `links` o `total` en la respuesta.
+
+## Las Consultas SQL Subyacentes
+
+Echemos un vistazo a las consultas SQL subyacentes que se ejecutan cuando se utiliza el método `simplePaginate`.
+
+El método `simplePaginate` todavía depende de los valores `limit` y `offset` para obtener el subconjunto de datos de la base de datos. Sin embargo, no ejecuta la consulta para obtener la cantidad total de registros en el conjunto de datos.
+
+El valor `offset` todavía se calcula de la misma manera que antes:
+
+```
+Offset = Page size * (Page - 1)
+```
+
+Sin embargo, el valor de `límite` se calcula de forma ligeramente diferente al método `paginate`. Se calcula de la siguiente manera:
+
+```
+Limit = Page size + 1
+```
+
+Esto se debe a que el método `simplePaginate` necesita obtener un registro más que el valor `perPage` para determinar si hay más registros para obtener. Por ejemplo, digamos que estamos obteniendo 15 registros por página. El valor `limit` sería 16. Por lo tanto, si se devolvieran 16 registros, sabríamos que hay al menos una página más de datos disponibles para obtener. Si se devolvieran menos de 16 registros, sabríamos que estamos en la última página de datos.
+
+Por lo tanto, si quisiéramos obtener la primera página de usuarios (con 15 usuarios por página), se ejecutarían las siguientes consultas SQL:
+
+
+```sql
+select * from `users` limit 16 offset 0
+```
+
+La consulta para la segunda página se vería así:
+
+```sql
+select * from `users` limit 16 offset 15
+```
+
+## Using the cursorPaginate Method
+
 
 
