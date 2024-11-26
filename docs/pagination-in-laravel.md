@@ -55,7 +55,7 @@ El método `paginate` puede determinar automáticamente el número de `página` 
 
 De manera predeterminada, todos los métodos de paginación de Laravel obtienen 15 registros a la vez. Sin embargo, esto se puede cambiar a un valor diferente (veremos cómo hacerlo más adelante).
 
-## Uso de `paginate` con Blade Views
+### Uso de `paginate` con Blade Views
 
 Veamos cómo utilizar el método `paginate` al representar datos en una vista de Blade.
 
@@ -114,7 +114,7 @@ También podemos ver que el método `paginate` nos brinda una descripción gener
 Es importante tener en cuenta que el método `links` devolverá el HTML con estilo usando Tailwind CSS. Si desea utilizar algo distinto de Tailwind o desea darle estilo a los enlaces de paginación usted mismo, puede consultar la documentación sobre cómo [personalizar las vistas de paginación](https://laravel.com/docs/11.x/pagination#customizing-the-pagination-view).
 
 
-## Uso de `paginate` en Puntos Finales de API
+### Uso de `paginate` en Puntos Finales de API
 
 Además de utilizar el método `paginate` en las vistas de Blade, también puedes usarlo en los puntos finales de la API. Laravel facilita este proceso al convertir automáticamente los datos paginados en JSON.
 
@@ -228,7 +228,7 @@ Analicemos la respuesta JSON:
 - `total` - La cantidad total de registros en el conjunto de datos. En este caso, hay 50 registros.
 
 
-## Las Consultas SQL Subyacentes
+### Las Consultas SQL Subyacentes
 
 El uso del método `paginate` en Laravel da como resultado la ejecución de dos consultas SQL:
 
@@ -293,7 +293,7 @@ Al ejecutar el código anterior, `$users` sería una instancia de `Illuminate\Co
 
 A diferencia del objeto `Illuminate\Pagination\LengthAwarePaginator` devuelto por el método `paginate`, el objeto `Illuminate\Pagination\Paginator` no contiene información sobre la cantidad total de registros en el conjunto de datos y no tiene idea de cuántas páginas o registros totales hay. Solo sabe sobre la página actual de datos y si hay más registros para recuperar.
 
-## Uso de `simplePaginate` con vistas Blade
+### Uso de `simplePaginate` con vistas Blade
 
 Veamos cómo se puede utilizar el método `simplePaginate` con una vista Blade. Supondremos que tenemos la misma ruta que antes, pero esta vez utilizaremos el método `simplePaginate`:
 
@@ -341,7 +341,7 @@ La página resultante se vería así:
 
 Como podemos ver en este ejemplo, la salida de `$users->links()` es diferente a la salida que vimos al usar el método `paginate`. Dado que el método `simplePaginate` no obtiene el número total de registros, no tiene contexto del número total de páginas o registros, solo si hay una página siguiente o no. Por lo tanto, solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
 
-## Uso de `simplePaginate` en puntos finales de API
+### Uso de `simplePaginate` en puntos finales de API
 
 También puedes usar el método `simplePaginate` en los puntos finales de la API. Laravel convertirá automáticamente los datos paginados en JSON.
 
@@ -399,7 +399,7 @@ Cuando llegamos a esta ruta, obtendremos una respuesta JSON similar a la siguien
 
 Como podemos ver, la respuesta JSON es muy similar a la que obtuvimos al usar el método `paginate`. La diferencia clave es que no tenemos los campos `last_page`, `last_page_url`, `links` o `total` en la respuesta.
 
-## Las Consultas SQL Subyacentes
+### Las Consultas SQL Subyacentes
 
 Echemos un vistazo a las consultas SQL subyacentes que se ejecutan cuando se utiliza el método `simplePaginate`.
 
@@ -432,7 +432,31 @@ La consulta para la segunda página se vería así:
 select * from `users` limit 16 offset 15
 ```
 
-## Using the cursorPaginate Method
+## Usando el método `cursorPaginate`
+
+Hasta ahora hemos analizado los métodos `paginate` y `simplePaginate`, que utilizan paginación basada en desplazamiento. Ahora vamos a analizar el método `cursorPaginate`, que utiliza paginación basada en cursor.
+
+Como advertencia, la paginación basada en cursor puede parecer un poco confusa la primera vez que la conoces. Así que no te preocupes si no la entiendes bien al principio. Con suerte, al final de este artículo, comprenderás mejor cómo funciona. También dejaré un video increíble al final de este artículo que explica la paginación basada en cursor con más detalle.
+
+Con la paginación basada en desplazamiento, utilizamos los valores `limit` y `offset` para obtener un subconjunto de datos de la base de datos. Por lo tanto, podemos decir _"omitir los primeros 10 registros y obtener los siguientes 10 registros"_. Esto es fácil de entender y de implementar. Mientras que con la paginación por cursor, utilizamos un cursor (normalmente un identificador único para un registro específico en la base de datos) como punto de partida para obtener el conjunto de registros anterior/siguiente.
+
+Por ejemplo, supongamos que hacemos una consulta para obtener los primeros 15 usuarios. Supondremos que el ID del usuario número 15 es 20. Cuando queramos obtener los siguientes 15 usuarios, utilizaremos el ID del usuario número 15 (20) como cursor. Diremos _"obtener los siguientes 15 usuarios con un ID mayor que 20"_.
+
+Es posible que a veces veas cursores a los que se hace referencia como _"tokens"_, _"keys"_, _"next"_, _"previous"_, etc. Básicamente, son una referencia a un registro específico en la base de datos. Veremos la estructura de los cursores más adelante en esta sección cuando echemos un vistazo a las consultas SQL subyacentes.
+
+Laravel nos permite usar fácilmente la paginación basada en cursores con el método `cursorPaginate`:
+
+```php
+use App\Models\User;
+ 
+$users = User::query()->cursorPaginate();
+```
+
+Al ejecutar el código anterior, el campo `$users` sería una instancia de `Illuminate\Contracts\Pagination\CursorPaginator`, normalmente un objeto `Illuminate\Pagination\CursorPaginator`. Esta instancia del paginador contiene toda la información que necesita para mostrar los datos paginados en su aplicación.
+
+De manera similar al método `simplePaginate`, el método `cursorPaginate` no recupera la cantidad total de registros en el conjunto de datos. Solo conoce la página actual de datos y si hay más registros para recuperar, por lo que no conocemos de inmediato la cantidad total de páginas o registros.
+
+### Using cursorPaginate with Blade Views
 
 
 
