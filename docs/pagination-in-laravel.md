@@ -102,7 +102,7 @@ Nuestro archivo `resources/views/users/index.blade.php` podría verse así:
 
 La página resultante se vería así:
 
-![laravel-pagination-1](./img/laravel-pagination-1.avif)
+![laravel-pagination](./img/laravel-pagination-1.avif)
 
 Analicemos lo que sucede en la vista Blade:
 
@@ -337,7 +337,7 @@ Construiremos nuestra vista Blade de la misma manera que antes:
 
 La página resultante se vería así:
 
-![laravel-pagination-1](./img/laravel-pagination-2.avif)
+![laravel-pagination](./img/laravel-pagination-2.avif)
 
 Como podemos ver en este ejemplo, la salida de `$users->links()` es diferente a la salida que vimos al usar el método `paginate`. Dado que el método `simplePaginate` no obtiene el número total de registros, no tiene contexto del número total de páginas o registros, solo si hay una página siguiente o no. Por lo tanto, solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
 
@@ -456,7 +456,51 @@ Al ejecutar el código anterior, el campo `$users` sería una instancia de `Illu
 
 De manera similar al método `simplePaginate`, el método `cursorPaginate` no recupera la cantidad total de registros en el conjunto de datos. Solo conoce la página actual de datos y si hay más registros para recuperar, por lo que no conocemos de inmediato la cantidad total de páginas o registros.
 
-### Using cursorPaginate with Blade Views
+### Uso de `cursorPaginate` con Blade Views
 
+Veamos cómo utilizar el método `cursorPaginate` al representar datos en una vista de Blade. De manera similar a nuestros ejemplos anteriores, supondremos que tenemos una ruta simple que obtiene los usuarios de la base de datos en un formato paginado y los pasa a una vista:
 
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    $users = User::query()->cursorPaginate();
+ 
+    return view('users.index', [
+        'users' => $users,
+    ]);
+});
+```
+
+La vista de Blade podría verse así:
+
+```html
+<html>
+<head>
+    <title>Cursor Paginate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+ 
+<body>
+    <div class="max-w-5xl mx-auto py-8">
+        <h1 class="text-5xl">Cursor Paginate</h1>
+ 
+        <ul class="py-4">
+            @foreach ($users as $user)
+                <li class="py-1 border-b">{{ $user->name }}</li>
+            @endforeach
+        </ul>
+ 
+        {{ $users->links() }}
+    </div>
+</body>
+</html>
+```
+
+Esto generaría una página similar a la siguiente:
+
+![laravel-pagination](./img/laravel-pagination-3.avif)
+
+Como podemos ver, dado que el método `cursorPaginate` no obtiene la cantidad total de registros en el conjunto de datos, el resultado de `$users->links()` es similar al que vimos al usar el método `simplePaginate`. Solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
 
