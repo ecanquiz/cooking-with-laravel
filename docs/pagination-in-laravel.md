@@ -37,7 +37,7 @@ Laravel proporciona tres métodos diferentes para paginar consultas Eloquent en 
 
 Echemos un vistazo a cada uno de estos métodos con más detalle.
 
-## Usando el método `paginate`
+## Usando el Método `paginate`
 
 El método `paginate` le permite obtener un subconjunto de datos de la base de datos en función de un desplazamiento (offset) y un límite (los analizaremos más adelante cuando observemos las consultas SQL subyacentes).
 
@@ -55,7 +55,7 @@ El método `paginate` puede determinar automáticamente el número de `página` 
 
 De manera predeterminada, todos los métodos de paginación de Laravel obtienen 15 registros a la vez. Sin embargo, esto se puede cambiar a un valor diferente (veremos cómo hacerlo más adelante).
 
-### Uso de `paginate` con Blade Views
+### Usando el `paginate` con Vistas Blade
 
 Veamos cómo utilizar el método `paginate` al representar datos en una vista de Blade.
 
@@ -114,7 +114,7 @@ También podemos ver que el método `paginate` nos brinda una descripción gener
 Es importante tener en cuenta que el método `links` devolverá el HTML con estilo usando Tailwind CSS. Si desea utilizar algo distinto de Tailwind o desea darle estilo a los enlaces de paginación usted mismo, puede consultar la documentación sobre cómo [personalizar las vistas de paginación](https://laravel.com/docs/11.x/pagination#customizing-the-pagination-view).
 
 
-### Uso de `paginate` en Puntos Finales de API
+### Usando el `paginate` en Puntos Finales de API
 
 Además de utilizar el método `paginate` en las vistas de Blade, también puedes usarlo en los puntos finales de la API. Laravel facilita este proceso al convertir automáticamente los datos paginados en JSON.
 
@@ -273,7 +273,7 @@ y
 select * from `users` limit 15 offset 30
 ```
 
-## Utilizando el método `simplePaginate`
+## Usando el Método `simplePaginate`
 
 El método `simplePaginate` es muy similar al método `paginate` pero con una diferencia clave. El método `simplePaginate` no recupera la cantidad total de registros en el conjunto de datos.
 
@@ -293,7 +293,7 @@ Al ejecutar el código anterior, `$users` sería una instancia de `Illuminate\Co
 
 A diferencia del objeto `Illuminate\Pagination\LengthAwarePaginator` devuelto por el método `paginate`, el objeto `Illuminate\Pagination\Paginator` no contiene información sobre la cantidad total de registros en el conjunto de datos y no tiene idea de cuántas páginas o registros totales hay. Solo sabe sobre la página actual de datos y si hay más registros para recuperar.
 
-### Uso de `simplePaginate` con vistas Blade
+### Usando el `simplePaginate` con Vistas Blade
 
 Veamos cómo se puede utilizar el método `simplePaginate` con una vista Blade. Supondremos que tenemos la misma ruta que antes, pero esta vez utilizaremos el método `simplePaginate`:
 
@@ -341,7 +341,7 @@ La página resultante se vería así:
 
 Como podemos ver en este ejemplo, la salida de `$users->links()` es diferente a la salida que vimos al usar el método `paginate`. Dado que el método `simplePaginate` no obtiene el número total de registros, no tiene contexto del número total de páginas o registros, solo si hay una página siguiente o no. Por lo tanto, solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
 
-### Uso de `simplePaginate` en puntos finales de API
+### Usando el `simplePaginate` en Puntos Finales de API
 
 También puedes usar el método `simplePaginate` en los puntos finales de la API. Laravel convertirá automáticamente los datos paginados en JSON.
 
@@ -432,7 +432,7 @@ La consulta para la segunda página se vería así:
 select * from `users` limit 16 offset 15
 ```
 
-## Usando el método `cursorPaginate`
+## Usando el Método `cursorPaginate`
 
 Hasta ahora hemos analizado los métodos `paginate` y `simplePaginate`, que utilizan paginación basada en desplazamiento. Ahora vamos a analizar el método `cursorPaginate`, que utiliza paginación basada en cursor.
 
@@ -456,7 +456,7 @@ Al ejecutar el código anterior, el campo `$users` sería una instancia de `Illu
 
 De manera similar al método `simplePaginate`, el método `cursorPaginate` no recupera la cantidad total de registros en el conjunto de datos. Solo conoce la página actual de datos y si hay más registros para recuperar, por lo que no conocemos de inmediato la cantidad total de páginas o registros.
 
-### Uso de `cursorPaginate` con Blade Views
+### Usando el `cursorPaginate` con Vistas Blade
 
 Veamos cómo utilizar el método `cursorPaginate` al representar datos en una vista de Blade. De manera similar a nuestros ejemplos anteriores, supondremos que tenemos una ruta simple que obtiene los usuarios de la base de datos en un formato paginado y los pasa a una vista:
 
@@ -503,4 +503,188 @@ Esto generaría una página similar a la siguiente:
 ![laravel-pagination](./img/laravel-pagination-3.avif)
 
 Como podemos ver, dado que el método `cursorPaginate` no obtiene la cantidad total de registros en el conjunto de datos, el resultado de `$users->links()` es similar al que vimos al usar el método `simplePaginate`. Solo vemos los enlaces _"Previous"_ y _"Next"_ en los enlaces de paginación.
+
+### Usando el `cursorPaginate` en Puntos Finales de API
+
+Laravel también te permite usar el método `cursorPaginate` en los puntos finales de la API y convertirá automáticamente los datos paginados en JSON para nosotros.
+
+Construyamos un punto final `/api/users` que devuelva los usuarios paginados en formato JSON:
+
+
+```php
+use App\Models\User;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    return User::query()->cursorPaginate();
+});
+```
+
+Cuando llegamos a esta ruta, obtendremos una respuesta JSON similar a la siguiente (he limitado el campo `data` a solo 3 registros para abreviar):
+
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Andy Runolfsson",
+      "email": "teresa.wiegand@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 2,
+      "name": "Rafael Cummings",
+      "email": "odessa54@example.org",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 3,
+      "name": "Reynold Lindgren",
+      "email": "juwan.johns@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    }
+  ],
+  "path": "http://example.com/users",
+  "per_page": 15,
+  "next_cursor": "eyJ1c2Vycy5pZCI6MTUsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0",
+  "next_page_url": "http://example.com/users?cursor=eyJ1c2Vycy5pZCI6MTUsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0",
+  "prev_cursor": null,
+  "prev_page_url": null
+}
+```
+
+Como podemos ver, la respuesta JSON es similar a las respuestas anteriores que hemos visto, pero con algunas pequeñas diferencias. Dado que no estamos obteniendo la cantidad total de registros, no tenemos los campos `last_page`, `last_page_url`, `links` o `total` en la respuesta. También puede haber notado que tampoco tenemos los campos `from` y `to`.
+
+En su lugar, tenemos los campos `next_cursor` y `prev_cursor` que contienen el cursor para las páginas de datos anterior y siguiente. Dado que estamos en la primera página, los campos `prev_cursor` y `prev_page_url` son ambos `null`. Sin embargo, los campos `next_cursor` y `next_page_url` están establecidos.
+
+El campo `next_cursor` es una cadena codificada en base 64 que contiene el cursor para la siguiente página de datos. Si decodificamos el campo `next_cursor`, obtendremos algo como esto (embellecido para facilitar su lectura):
+
+
+```json
+{
+  "users.id": 15,
+  "_pointsToNextItems": true
+}
+```
+
+El cursor contiene dos piezas de información independientes:
+
+- `users.id` - El ID del último registro obtenido en el conjunto de datos.
+- `_pointsToNextItems` - Un valor booleano que nos indica si el cursor apunta al siguiente o al anterior conjunto de elementos. Si el valor es `true`, significa que el cursor debe usarse para obtener el siguiente conjunto de registros con un ID mayor que el valor `users.id`. Si el valor es `false`, significa que el cursor debe usarse para obtener el conjunto anterior de registros con un ID menor que el valor `users.id`.
+
+Echemos un vistazo a cómo podría verse la segunda página de datos (nuevamente, acortada a 3 registros para abreviar):
+
+```json
+{
+  "data": [
+    {
+      "id": 16,
+      "name": "Durward Nikolaus",
+      "email": "xkuhic@example.com",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 17,
+      "name": "Dr. Glenda Cruickshank IV",
+      "email": "kristoffer.schiller@example.org",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    },
+    {
+      "id": 18,
+      "name": "Prof. Dolores Predovic",
+      "email": "frankie.schultz@example.net",
+      "email_verified_at": "2024-10-15T23:19:28.000000Z",
+      "created_at": "2024-10-15T23:19:29.000000Z",
+      "updated_at": "2024-10-15T23:19:29.000000Z"
+    }
+  ],
+  "path": "http://example.com/users",
+  "per_page": 15,
+  "next_cursor": "eyJ1c2Vycy5pZCI6MzAsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0",
+  "next_page_url": "http://example.com/users?cursor=eyJ1c2Vycy5pZCI6MzAsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0",
+  "prev_cursor": "eyJ1c2Vycy5pZCI6MTYsIl9wb2ludHNUb05leHRJdGVtcyI6ZmFsc2V9",
+  "prev_page_url": "http://example.com/users?cursor=eyJ1c2Vycy5pZCI6MTYsIl9wb2ludHNUb05leHRJdGVtcyI6ZmFsc2V9"
+}
+```
+
+Podemos ver que los campos `prev_cursor` y `prev_page_url` ahora están configurados, y los campos `next_cursor` y `next_page_url` se han actualizado con el cursor para la siguiente página de datos.
+
+### Las Consultas SQL Subyacentes
+
+Para comprender mejor cómo funciona la paginación del cursor, echemos un vistazo a las consultas SQL subyacentes que se ejecutan cuando se utiliza el método `cursorPaginate`.
+
+En la primera página de datos (que contiene 15 registros), se ejecutaría la siguiente consulta SQL:
+
+```sql
+select * from `users` order by `users`.`id` asc limit 16
+```
+
+Podemos ver que estamos recuperando los primeros 16 registros de la tabla `users` y ordenándolos por la columna `id` en orden ascendente. De manera similar al método `simplePaginate`, estamos recuperando 16 filas porque queremos determinar si hay más registros para recuperar.
+
+Imaginemos que luego navegamos a la siguiente página de elementos con el siguiente cursor:
+
+
+```sh
+eyJ1c2Vycy5pZCI6MTUsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0
+```
+
+Cuando se decodifica este cursor, obtenemos el siguiente objeto JSON:
+
+
+```json
+{
+  "users.id": 15,
+  "_pointsToNextItems": true
+}
+```
+
+Luego, Laravel ejecutará la siguiente consulta SQL para obtener el siguiente conjunto de registros:
+
+
+```sql
+select * from `users` where (`users`.`id` > 15) order by `users`.`id` asc limit 16
+```
+
+Como podemos ver, estamos recuperando los siguientes 16 registros de la tabla `users` que tienen un `id` mayor que 15 (ya que 15 fue el último ID en la página anterior).
+
+Ahora supongamos que el ID del primer usuario en la página 2 es 16. Cuando naveguemos de regreso a la primera página de datos desde la segunda página, se utilizará el siguiente cursor:
+
+```sh
+eyJ1c2Vycy5pZCI6MTYsIl9wb2ludHNUb05leHRJdGVtcyI6ZmFsc2V9
+```
+
+Cuando esto se decodifica, obtenemos el siguiente objeto JSON:
+
+
+```json
+{
+  "users.id": 16,
+  "_pointsToNextItems": false
+}
+```
+
+Cuando pasamos a la siguiente página de resultados, el último registro obtenido se utiliza como cursor. Cuando volvemos a la página anterior de resultados, el primer registro obtenido se utiliza como cursor. Por este motivo, podemos ver que el valor `users.id` está establecido en 16 en el cursor. También podemos ver que el valor `_pointsToNextItems` está establecido en `false` porque estamos volviendo al conjunto anterior de elementos.
+
+Como resultado, se ejecutaría la siguiente consulta SQL para obtener el conjunto anterior de registros:
+
+
+```sql
+select * from `users` where (`users`.`id` < 16) order by `users`.`id` desc limit 16
+```
+
+Como podemos ver, la restricción `where` ahora busca registros con un `id` menor que 16 (ya que 16 fue el primer ID en la página 2) y los resultados se ordenan en orden descendente.
+
+## Using API Resources with Pagination
+
 
