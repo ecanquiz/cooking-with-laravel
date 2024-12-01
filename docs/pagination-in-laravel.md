@@ -685,6 +685,130 @@ select * from `users` where (`users`.`id` < 16) order by `users`.`id` desc limit
 
 Como podemos ver, la restricción `where` ahora busca registros con un `id` menor que 16 (ya que 16 fue el primer ID en la página 2) y los resultados se ordenan en orden descendente.
 
-## Using API Resources with Pagination
+## Usando Recursos API con Paginación
+
+Hasta ahora, en nuestros ejemplos de API, solo hemos devuelto los datos paginados directamente desde el controlador. Sin embargo, en una aplicación del mundo real, es probable que desee procesar los datos antes de devolvérselos al usuario. Esto podría ser cualquier cosa, desde agregar o eliminar campos, convertir tipos de datos o incluso transformar los datos a un formato completamente diferente. Por este motivo, es probable que desee utilizar [Recursos de API](https://laravel.com/docs/11.x/eloquent-resources), ya que le brindan una forma de transformar sus datos de manera consistente antes de devolverlos.
+
+Laravel te permite usar recursos API junto con la paginación. Veamos un ejemplo de cómo hacerlo.
+
+Imagina que hemos creado una clase de recurso API `App\Http\Resources\UserResource` que transforma los datos del usuario antes de devolverlos. Podría verse así:
+
+
+```php
+declare(strict_types=1);
+ 
+namespace App\Http\Resources;
+ 
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+ 
+final class UserResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+        ];
+    }
+}
+```
+
+En el método `toArray`, definimos que siempre que procesamos un usuario a través de este recurso, solo queremos devolver los campos `id`, `name` y `email`.
+
+Ahora construyamos un punto final de API `/api/users` simple en nuestro archivo `routes/api.php` que devuelva los usuarios paginados usando `App\Http\Resources\UserResource`:
+
+
+```php
+use App\Models\User;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function () {
+    $users = User::query()->paginate();
+ 
+    return UserResource::collection(resource: $users);
+});
+```
+
+En el código anterior, estamos recuperando una sola página de usuarios (supongamos que es la primera página que contiene 15 usuarios) de la base de datos. Luego, pasamos el campo `$users` (que será una instancia de `Illuminate\Pagination\LengthAwarePaginator)` al método `UserResource::collection`. Este método transformará los datos paginados utilizando `App\Http\Resources\UserResource` antes de devolverlos al usuario.
+
+Cuando llegamos al punto final `/api/users`, obtendremos una respuesta JSON similar a la siguiente (he limitado el campo `data` a solo 3 registros para abreviar):
+
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Andy Runolfsson",
+      "email": "teresa.wiegand@example.net"
+    },
+    {
+      "id": 2,
+      "name": "Rafael Cummings",
+      "email": "odessa54@example.org"
+    },
+    {
+      "id": 3,
+      "name": "Reynold Lindgren",
+      "email": "juwan.johns@example.net"
+    }
+  ],
+  "links": {
+    "first": "http://example.com/users?page=1",
+    "last": "http://example.com/users?page=4",
+    "prev": null,
+    "next": "http://example.com/users?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 4,
+    "links": [
+      {
+        "url": null,
+        "label": "&laquo; Previous",
+        "active": false
+      },
+      {
+        "url": "http://example.com/users?page=1",
+        "label": "1",
+        "active": true
+      },
+      {
+        "url": "http://example.com/users?page=2",
+        "label": "2",
+        "active": false
+      },
+      {
+        "url": "http://example.com/users?page=3",
+        "label": "3",
+        "active": false
+      },
+      {
+        "url": "http://example.com/users?page=4",
+        "label": "4",
+        "active": false
+      },
+      {
+        "url": "http://example.com/users?page=2",
+        "label": "Next &raquo;",
+        "active": false
+      }
+    ],
+    "path": "http://example.com/users",
+    "per_page": 15,
+    "to": 15,
+    "total": 50
+  }
+}
+```
+
+
+Como podemos ver en el JSON anterior, Laravel detecta que estamos trabajando con un conjunto de datos paginados y devuelve los datos paginados en un formato similar al anterior. Sin embargo, esta vez los usuarios en el campo `data` solo contienen los campos `id`, `name` y `email` que especificamos en nuestra clase de recurso API. Otros campos (`current_page`, `from`, `last_page`, `links`, `path`, `per_page`, `to` y `total`) aún se devuelven como parte de los datos paginados, pero se han colocado dentro de un campo `meta`. También hay un campo `links` que contiene los enlaces `first`, `last`, `prev` y `next` a las diferentes páginas de datos.
+
+## Changing the Per Page Value
 
 
