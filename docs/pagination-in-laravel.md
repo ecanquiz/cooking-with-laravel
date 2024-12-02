@@ -809,6 +809,133 @@ Cuando llegamos al punto final `/api/users`, obtendremos una respuesta JSON simi
 
 Como podemos ver en el JSON anterior, Laravel detecta que estamos trabajando con un conjunto de datos paginados y devuelve los datos paginados en un formato similar al anterior. Sin embargo, esta vez los usuarios en el campo `data` solo contienen los campos `id`, `name` y `email` que especificamos en nuestra clase de recurso API. Otros campos (`current_page`, `from`, `last_page`, `links`, `path`, `per_page`, `to` y `total`) aún se devuelven como parte de los datos paginados, pero se han colocado dentro de un campo `meta`. También hay un campo `links` que contiene los enlaces `first`, `last`, `prev` y `next` a las diferentes páginas de datos.
 
-## Changing the Per Page Value
+## Cambiar el Valor Por Página
+
+Al crear vistas con datos paginados, es posible que desee permitir que el usuario cambie la cantidad de registros que se muestran por página. Esto puede hacerse mediante un menú desplegable o un campo de entrada de números.
+
+Laravel facilita el cambio de la cantidad de registros que se muestran por página al pasar un parámetro `perPage` a los métodos `simplePaginate`, `paginate` y `cursorPaginate`. Este parámetro le permite especificar la cantidad de registros que desea mostrar por página.
+
+Veamos un ejemplo simple de cómo leer un parámetro de consulta `per_page` y usarlo para cambiar la cantidad de registros obtenidos por página:
 
 
+```php
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+ 
+Route::get('users', function (Request $request) {
+    $perPage = $request->integer('per_page', default: 10);
+ 
+    return User::query()->paginate(perPage: $perPage);
+});
+```
+
+En el ejemplo anterior, tomamos el valor del parámetro de consulta `per_page`. Si no se proporciona el valor, el valor predeterminado será 10. Luego, pasamos ese valor al parámetro `perPage` del método `paginate`.
+
+Podríamos entonces acceder a estas diferentes URL:
+
+- `https://my-app.com/users` - Muestra la primera página de usuarios con 10 registros por página.
+- `https://my-app.com/users?per_page=5` - Muestra la primera página de usuarios con 5 registros por página.
+- `https://my-app.com/users?per_page=5&page=2` - Muestra la segunda página de usuarios con 5 registros por página.
+- Y así sucesivamente...
+
+## Cómo Decidir Qué Método de Paginación usar
+
+Ahora que hemos visto los diferentes tipos de paginación y cómo usarlos en Laravel, discutiremos cómo decidir cuál de estos enfoques usar en su aplicación.
+
+### ¿Necesita el Número de Página o el Número Total de Registros?
+
+Si está creando un punto final de interfaz de usuario o API que requiere que se muestre la cantidad total de registros o páginas, entonces el método `paginate` probablemente sea una opción sensata.
+
+Si no necesita ninguno de estos, entonces `simplePaginate` o `cursorPaginate` serán más eficientes, ya que no realizan consultas innecesarias para contar la cantidad total de registros.
+
+### ¿Necesitas Saltar a una Página Específica?
+
+Si necesitas poder saltar a una página específica de datos, entonces la paginación basada en desplazamiento es más adecuada. Dado que la paginación del cursor es con estado, se basa en la página anterior para saber a dónde ir a continuación. Por lo tanto, no es tan fácil saltar a una página específica.
+
+Mientras que cuando se utiliza la paginación con desplazamiento, normalmente puedes pasar el número de página en la solicitud (quizás como un parámetro de consulta) y saltar a esa página sin tener ningún contexto de la página anterior.
+
+### ¿Qué Tan Grande es el Conjunto de Datos?
+
+Debido a la forma en que las bases de datos manejan los valores de "desplazamiento", la paginación basada en desplazamientos se vuelve menos eficiente a medida que aumenta el número de páginas. Esto se debe a que cuando se utiliza un desplazamiento, la base de datos aún tiene que escanear todos los registros hasta el valor de desplazamiento. Simplemente se descartan y no se devuelven en los resultados de la consulta.
+
+Debido a la forma en que las bases de datos manejan los valores `offset`, la paginación basada en desplazamiento se vuelve menos eficiente a medida que aumenta el número de páginas. Esto se debe a que cuando se utiliza un offset, la base de datos aún tiene que escanear todos los registros hasta el valor de offset. Simplemente se descartan y no se devuelven en los resultados de la consulta.
+
+Aquí hay un excelente artículo que explica esto con más detalle: https://use-the-index-luke.com/no-offset.
+
+Por lo tanto, a medida que aumenta la cantidad total de datos en la base de datos y el número de páginas, la paginación basada en desplazamiento puede volverse menos eficiente. En estos casos, la paginación basada en cursor es más eficiente, especialmente si el campo del cursor está indexado, ya que no se leen los registros anteriores. Por este motivo, si va a utilizar la paginación en un conjunto de datos grande, es posible que desee optar por la paginación con cursor en lugar de la paginación con desplazamiento.
+
+### ¿Es Probable que el Conjunto de Datos Cambie con Frecuencia?
+
+La paginación basada en desplazamiento puede sufrir problemas si el conjunto de datos subyacente cambia entre solicitudes.
+
+Veamos un ejemplo.
+
+Supongamos que tenemos los siguientes 10 usuarios en nuestra base de datos:
+
+- Usuario 1
+- Usuario 2
+- Usuario 3
+- Usuario 4
+- Usuario 5
+- Usuario 6
+- Usuario 7
+- Usuario 8
+- Usuario 9
+- Usuario 10
+
+Realizamos una solicitud para obtener la primera página (que contiene 5 usuarios) y obtenemos los siguientes usuarios:
+
+- Usuario 1
+- Usuario 2
+- Usuario 3
+- Usuario 4
+- Usuario 5
+
+Cuando navegamos a la página 2, esperaríamos obtener los usuarios 6 a 10. Sin embargo, imaginemos que antes de cargar la página 2 (mientras aún estamos viendo la página 1), el Usuario 1 se elimina de la base de datos. Dado que el tamaño de la página es 5, la consulta para obtener la página siguiente se vería así:
+
+```sql
+select * from `users` limit 5 offset 5
+```
+
+Esto significa que omitiremos los primeros 5 registros y buscaremos los siguientes 5.
+
+Esto generaría una página 2 que contendría los siguientes usuarios:
+
+- Usuario 7
+- Usuario 8
+- Usuario 9
+- Usuario 10
+
+Como podemos ver, el Usuario 6 no aparece en la lista. Esto se debe a que el Usuario 6 ahora es el quinto registro de la tabla, por lo que en realidad está en la primera página.
+
+La paginación basada en cursor no tiene este problema, porque no estamos saltando registros, solo estamos obteniendo el siguiente conjunto de registros en función de un cursor. Imaginemos que hemos utilizado la paginación basada en cursor en el ejemplo anterior. El cursor para la página 2 sería el ID del Usuario 5 (que asumiremos que es 5) ya que era el último registro de la primera página. Por lo tanto, nuestra consulta para la página 2 podría verse así:
+
+
+```sql
+select * from `users` where (`users`.`id` > 5) order by `users`.`id` asc limit 6
+```
+
+La ejecución de la consulta anterior devolvería los usuarios 6 a 10 como se esperaba.
+
+Con suerte, esto debería resaltar cómo la paginación basada en desplazamiento puede volverse problemática cuando se modifican, se agregan o se eliminan los datos subyacentes mientras se están leyendo. Se vuelve menos predecible y puede generar resultados inesperados.
+
+### ¿Está Creando una API?
+
+Es importante recordar que no está obligado a utilizar un único tipo de paginación en su aplicación. En algunos lugares, la paginación con desplazamiento puede ser más adecuada (tal vez para fines de interfaz de usuario) y en otros, la paginación con cursor puede ser más eficiente (como cuando se trabaja con un conjunto de datos grande). Por lo tanto, puede mezclar y combinar métodos de paginación en su aplicación según el caso de uso.
+
+Sin embargo, si está creando una API, le recomiendo encarecidamente que sea coherente y utilice un único enfoque de paginación para todos sus puntos finales. Esto facilitará que los desarrolladores comprendan cómo utilizar su API y evitará confusiones.
+
+No desea que tengan que recordar qué puntos finales utilizan paginación con desplazamiento y cuáles utilizan paginación con cursor.
+
+Por supuesto, esta no es una regla estricta. Si realmente necesita utilizar un método de paginación diferente en un punto final en particular, hágalo. Pero asegúrese de dejarlo claro en la documentación para que sea más fácil de entender para los desarrolladores.
+
+### ¿Prefieres un Video?
+
+Si eres más de aprender de manera visual, quizás quieras ver este increíble video de [Aaron Francis](https://laravel-news.com/@aarondfrancis) que explica la diferencia entre la paginación basada en desplazamiento y la basada en cursor con más detalle: https://www.youtube.com/watch?v=zwDIN04lIpc
+
+## Conclusión
+
+En este artículo, hemos analizado los diferentes tipos de paginación en Laravel y cómo utilizarlos. También hemos analizado las consultas SQL subyacentes y cómo decidir qué método de paginación utilizar en su aplicación.
+
+Con suerte, ahora debería sentirse más seguro al utilizar la paginación en sus aplicaciones de Laravel.
